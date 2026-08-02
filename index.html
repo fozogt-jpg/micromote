@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
 <title>Google TV Remote - micro:bit</title>
 
 <style>
+
 *{
     margin:0;
     padding:0;
@@ -28,21 +30,24 @@ body{
     padding:20px;
 }
 
+
 .connect{
     width:100%;
     height:54px;
-    border-radius:30px;
     border:0;
+    border-radius:28px;
     background:#8ab4f8;
     color:#202124;
     font-size:18px;
     font-weight:700;
+    cursor:pointer;
 }
+
 
 .status{
     text-align:center;
-    color:#9aa0a6;
     margin:18px 0;
+    color:#9aa0a6;
 }
 
 
@@ -53,12 +58,15 @@ body{
     position:relative;
 }
 
+
 .outer{
     position:absolute;
-    inset:0;
+    width:280px;
+    height:280px;
     background:#303134;
     border-radius:50%;
 }
+
 
 .nav{
     position:absolute;
@@ -67,27 +75,32 @@ body{
     border:0;
     background:none;
     color:#dadce0;
-    font-size:42px;
+    font-size:38px;
     border-radius:50%;
+    cursor:pointer;
 }
 
-.nav:active,
-.center:active,
-.small:active,
-.vol button:active{
+
+.center{
+    position:absolute;
+    width:110px;
+    height:110px;
+    left:85px;
+    top:85px;
+    border:0;
+    border-radius:50%;
     background:#5f6368;
-    transform:scale(.92);
 }
 
 
 .up{
-    top:15px;
     left:105px;
+    top:15px;
 }
 
 .down{
-    bottom:15px;
     left:105px;
+    bottom:15px;
 }
 
 .left{
@@ -101,14 +114,11 @@ body{
 }
 
 
-.center{
-    position:absolute;
-    width:110px;
-    height:110px;
-    left:85px;
-    top:85px;
-    border-radius:50%;
-    border:0;
+.nav:active,
+.center:active,
+.small:active,
+.vol button:active{
+    transform:scale(.92);
     background:#5f6368;
 }
 
@@ -124,21 +134,20 @@ body{
 .small{
     width:60px;
     height:60px;
-    border-radius:50%;
     border:0;
+    border-radius:50%;
     background:#303134;
     color:white;
-    font-size:28px;
+    font-size:30px;
 }
 
 
 .vol{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:3px;
-    background:#303134;
-    border-radius:20px;
     overflow:hidden;
+    border-radius:20px;
+    background:#303134;
 }
 
 
@@ -152,66 +161,99 @@ body{
 
 
 .footer{
-    text-align:center;
     margin-top:20px;
+    text-align:center;
     color:#80868b;
     font-size:13px;
 }
 
 </style>
+
 </head>
+
 
 <body>
 
+
 <div class="remote">
+
 
 <button class="connect" onclick="connectSerial()">
 Connect micro:bit
 </button>
+
 
 <div class="status" id="status">
 Disconnected
 </div>
 
 
+
 <div class="dpad">
 
 <div class="outer"></div>
 
-<button class="nav up" data-cmd="1">▲</button>
-<button class="nav down" data-cmd="2">▼</button>
-<button class="nav left" data-cmd="3">◀</button>
-<button class="nav right" data-cmd="4">▶</button>
 
-<button class="center" data-cmd="7"></button>
+<button class="nav up" data-cmd="1">
+▲
+</button>
+
+
+<button class="nav down" data-cmd="2">
+▼
+</button>
+
+
+<button class="nav left" data-cmd="3">
+◀
+</button>
+
+
+<button class="nav right" data-cmd="4">
+▶
+</button>
+
+
+<button class="center" data-cmd="7">
+</button>
+
 
 </div>
 
 
+
 <div class="row">
+
 
 <button class="small" data-cmd="9">
 ‹
 </button>
 
+
 <button class="small" data-cmd="8">
 ⌂
 </button>
 
+
 </div>
 
 
+
 <div class="vol">
+
 
 <button data-cmd="6">
 −
 </button>
 
+
 <button data-cmd="5">
 +
 </button>
 
+
 </div>
+
 
 
 <div class="footer">
@@ -222,34 +264,60 @@ micro:bit Web Serial Remote
 </div>
 
 
+
+
 <script>
+
 
 let port;
 let writer;
+let reader;
+
 
 
 async function connectSerial(){
 
+
 if(!navigator.serial){
+
 alert("Web Serial is not supported");
+
 return;
+
 }
+
 
 
 try{
 
-port=await navigator.serial.requestPort();
+
+port = await navigator.serial.requestPort();
+
+
 
 await port.open({
+
 baudRate:115200
+
 });
 
 
-writer=port.writable.getWriter();
+
+writer = port.writable.getWriter();
+
+
+
+document.querySelector(".connect").style.display="none";
 
 
 status.textContent="Connected";
+
 status.style.color="#81c995";
+
+
+
+watchDisconnect();
+
 
 
 }catch(e){
@@ -258,95 +326,212 @@ console.log(e);
 
 }
 
+
 }
+
+
+
+
+
+async function watchDisconnect(){
+
+
+try{
+
+
+reader = port.readable.getReader();
+
+
+
+while(true){
+
+
+const {done}=await reader.read();
+
+
+if(done)
+break;
+
+
+}
+
+
+
+}catch(e){}
+
+
+
+disconnectSerial();
+
+
+}
+
+
+
+
+
+async function disconnectSerial(){
+
+
+try{
+
+
+if(writer)
+writer.releaseLock();
+
+
+
+if(reader)
+reader.releaseLock();
+
+
+
+if(port)
+await port.close();
+
+
+
+}catch(e){}
+
+
+
+document.querySelector(".connect").style.display="block";
+
+
+status.textContent="Disconnected";
+
+status.style.color="#9aa0a6";
+
+
+}
+
+
+
+
+
+
+navigator.serial.addEventListener("disconnect",()=>{
+
+disconnectSerial();
+
+});
+
+
+
+
 
 
 
 async function sendCommand(cmd){
 
+
 if(!writer)
 return;
 
 
+
 await writer.write(
+
 new TextEncoder().encode(cmd+"\n")
+
 );
+
 
 
 navigator.vibrate?.(20);
 
+
 }
+
+
 
 
 
 function attachButton(button){
 
+
 let cmd=button.dataset.cmd;
+
+
+if(!cmd)
+return;
+
+
 
 let timer;
 let repeat;
 
 
+
 function start(){
 
+
 sendCommand(cmd);
+
 
 
 timer=setTimeout(()=>{
 
+
 repeat=setInterval(()=>{
+
 
 sendCommand(cmd);
 
+
 },100);
+
+
 
 },350);
 
+
+
 }
+
+
 
 
 
 function stop(){
 
+
 clearTimeout(timer);
+
 clearInterval(repeat);
 
+
+}
+
+
+
+
+button.addEventListener("pointerdown",start);
+
+button.addEventListener("pointerup",stop);
+
+button.addEventListener("pointerleave",stop);
+
+button.addEventListener("pointercancel",stop);
+
+
+
 }
 
 
-button.addEventListener(
-"pointerdown",
-start
-);
-
-
-button.addEventListener(
-"pointerup",
-stop
-);
-
-
-button.addEventListener(
-"pointerleave",
-stop
-);
-
-
-button.addEventListener(
-"pointercancel",
-stop
-);
-
-}
 
 
 
 document
+
 .querySelectorAll("[data-cmd]")
+
 .forEach(attachButton);
 
 
+
 </script>
+
 
 </body>
 </html>
