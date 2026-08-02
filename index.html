@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Google TV Remote - micro:bit</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+    font-family:Roboto,Arial,sans-serif;
+}
+
+body{
+    background:#202124;
+    color:white;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+}
+
+.remote{
+    width:100%;
+    max-width:430px;
+    padding:20px;
+}
+
+.connect{
+    width:100%;
+    height:54px;
+    border-radius:30px;
+    border:0;
+    background:#8ab4f8;
+    color:#202124;
+    font-size:18px;
+    font-weight:700;
+}
+
+.status{
+    text-align:center;
+    color:#9aa0a6;
+    margin:18px 0;
+}
+
+
+.dpad{
+    width:280px;
+    height:280px;
+    margin:auto;
+    position:relative;
+}
+
+.outer{
+    position:absolute;
+    inset:0;
+    background:#303134;
+    border-radius:50%;
+}
+
+.nav{
+    position:absolute;
+    width:70px;
+    height:70px;
+    border:0;
+    background:none;
+    color:#dadce0;
+    font-size:42px;
+    border-radius:50%;
+}
+
+.nav:active,
+.center:active,
+.small:active,
+.vol button:active{
+    background:#5f6368;
+    transform:scale(.92);
+}
+
+
+.up{
+    top:15px;
+    left:105px;
+}
+
+.down{
+    bottom:15px;
+    left:105px;
+}
+
+.left{
+    left:15px;
+    top:105px;
+}
+
+.right{
+    right:15px;
+    top:105px;
+}
+
+
+.center{
+    position:absolute;
+    width:110px;
+    height:110px;
+    left:85px;
+    top:85px;
+    border-radius:50%;
+    border:0;
+    background:#5f6368;
+}
+
+
+.row{
+    display:flex;
+    justify-content:center;
+    gap:35px;
+    margin:35px 0;
+}
+
+
+.small{
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    border:0;
+    background:#303134;
+    color:white;
+    font-size:28px;
+}
+
+
+.vol{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:3px;
+    background:#303134;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+
+.vol button{
+    height:65px;
+    border:0;
+    background:#303134;
+    color:white;
+    font-size:30px;
+}
+
+
+.footer{
+    text-align:center;
+    margin-top:20px;
+    color:#80868b;
+    font-size:13px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="remote">
+
+<button class="connect" onclick="connectSerial()">
+Connect micro:bit
+</button>
+
+<div class="status" id="status">
+Disconnected
+</div>
+
+
+<div class="dpad">
+
+<div class="outer"></div>
+
+<button class="nav up" data-cmd="1">▲</button>
+<button class="nav down" data-cmd="2">▼</button>
+<button class="nav left" data-cmd="3">◀</button>
+<button class="nav right" data-cmd="4">▶</button>
+
+<button class="center" data-cmd="7"></button>
+
+</div>
+
+
+<div class="row">
+
+<button class="small" data-cmd="9">
+‹
+</button>
+
+<button class="small" data-cmd="8">
+⌂
+</button>
+
+</div>
+
+
+<div class="vol">
+
+<button data-cmd="6">
+−
+</button>
+
+<button data-cmd="5">
++
+</button>
+
+</div>
+
+
+<div class="footer">
+micro:bit Web Serial Remote
+</div>
+
+
+</div>
+
+
+<script>
+
+let port;
+let writer;
+
+
+async function connectSerial(){
+
+if(!navigator.serial){
+alert("Web Serial is not supported");
+return;
+}
+
+
+try{
+
+port=await navigator.serial.requestPort();
+
+await port.open({
+baudRate:115200
+});
+
+
+writer=port.writable.getWriter();
+
+
+status.textContent="Connected";
+status.style.color="#81c995";
+
+
+}catch(e){
+
+console.log(e);
+
+}
+
+}
+
+
+
+async function sendCommand(cmd){
+
+if(!writer)
+return;
+
+
+await writer.write(
+new TextEncoder().encode(cmd+"\n")
+);
+
+
+navigator.vibrate?.(20);
+
+}
+
+
+
+function attachButton(button){
+
+let cmd=button.dataset.cmd;
+
+let timer;
+let repeat;
+
+
+function start(){
+
+sendCommand(cmd);
+
+
+timer=setTimeout(()=>{
+
+repeat=setInterval(()=>{
+
+sendCommand(cmd);
+
+},100);
+
+},350);
+
+}
+
+
+
+function stop(){
+
+clearTimeout(timer);
+clearInterval(repeat);
+
+}
+
+
+button.addEventListener(
+"pointerdown",
+start
+);
+
+
+button.addEventListener(
+"pointerup",
+stop
+);
+
+
+button.addEventListener(
+"pointerleave",
+stop
+);
+
+
+button.addEventListener(
+"pointercancel",
+stop
+);
+
+}
+
+
+
+document
+.querySelectorAll("[data-cmd]")
+.forEach(attachButton);
+
+
+</script>
+
+</body>
+</html>
